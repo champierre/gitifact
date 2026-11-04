@@ -17,6 +17,33 @@ interface PageTarget {
 }
 
 let currentKey: string | null = null;
+let observers: MutationObserver[] = [];
+
+/**
+ * After the extension is reloaded/updated, content scripts in already-open tabs keep running but
+ * every `chrome.runtime` call throws "Extension context invalidated". Detect that and shut down.
+ */
+function contextAlive(): boolean {
+  try {
+    return typeof chrome.runtime?.id === 'string';
+  } catch {
+    return false;
+  }
+}
+
+function shutdown(): void {
+  for (const o of observers) o.disconnect();
+  observers = [];
+  if (scheduled !== null) {
+    clearTimeout(scheduled);
+    scheduled = null;
+  }
+  try {
+    teardown();
+  } catch {
+    /* the page may already be gone */
+  }
+}
 /** Whether the preview was already auto-opened for the current page (so "Code" stays selected after the user clicks it). */
 let autoOpened = false;
 let panel: HTMLElement | null = null;
@@ -223,6 +250,7 @@ function startResize(e: MouseEvent): void {
 }
 
 function postToFrame(msg: ToPreviewFrame): void {
+  if (!contextAlive()) return;
   frame?.contentWindow?.postMessage(msg, EXT_ORIGIN);
 }
 
@@ -240,6 +268,10 @@ window.addEventListener('message', (event: MessageEvent) => {
 
 // ---------- lifecycle / SPA navigation ----------
 function ensure(): void {
+  if (!contextAlive()) {
+    shutdown();
+    return;
+  }
   const target = analyze();
   if (!target) {
     if (currentKey !== null) {
@@ -288,11 +320,11 @@ function schedule(): void {
   }, 120);
 }
 
-new MutationObserver(schedule).observe(document.documentElement, { childList: true, subtree: true });
-new MutationObserver(() => postToFrame({ type: 'gitifact:theme', theme: currentTheme() })).observe(document.documentElement, {
-  attributes: true,
-  attributeFilter: ['data-color-mode', 'data-light-theme', 'data-dark-theme'],
-});
+const domObserver = new MutationObserver(schedule);
+domObserver.observe(document.documentElement, { childList: true, subtree: true });
+const themeObserver = new MutationObserver(() => postToFrame({ type: 'gitifact:theme', theme: currentTheme() }));
+themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-color-mode', 'data-light-theme', 'data-dark-theme'] });
+observers = [domObserver, themeObserver];
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => postToFrame({ type: 'gitifact:theme', theme: currentTheme() }));
 for (const ev of ['popstate', 'turbo:load', 'turbo:render', 'pjax:end']) window.addEventListener(ev, schedule);
 ensure();

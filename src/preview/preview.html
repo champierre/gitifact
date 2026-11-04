@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gitifact preview</title>
+<link rel="stylesheet" href="preview.css">
+</head>
+<body>
+<header class="toolbar" id="toolbar">
+  <div class="toolbar-left">
+    <img class="logo" src="icons/icon-32.png" alt="" width="16" height="16">
+    <span class="brand">Gitifact</span>
+    <span class="sep">/</span>
+    <a class="file" id="file-link" target="_blank" rel="noopener" title="Open on GitHub"></a>
+    <span class="ref" id="ref" title="ref"></span>
+  </div>
+  <div class="toolbar-right">
+    <label class="toggle" title="Run the page's JavaScript inside the sandbox (off by default)">
+      <input type="checkbox" id="opt-js"><span>JavaScript</span>
+    </label>
+    <label class="toggle" title="Allow loading resources from external hosts (CDNs, fonts, images)">
+      <input type="checkbox" id="opt-external"><span>External</span>
+    </label>
+    <div class="segmented" role="group" aria-label="Viewport width">
+      <button type="button" id="width-desktop" aria-pressed="true" title="Full width">Desktop</button>
+      <button type="button" id="width-mobile" aria-pressed="false" title="375px wide">Mobile</button>
+    </div>
+    <button type="button" class="btn" id="reload" title="Fetch the file again and re-render">Reload</button>
+    <a class="btn" id="newtab" target="_blank" rel="noopener" title="Open this preview in a new tab">Open in new tab</a>
+  </div>
+</header>
+<div class="status" id="status" hidden></div>
+<div class="error" id="error" hidden role="alert"></div>
+<details class="warnings" id="warnings" hidden>
+  <summary id="warnings-summary"></summary>
+  <ul id="warnings-list"></ul>
+</details>
+<div class="frame-wrap" id="frame-wrap">
+  <iframe id="sandbox" src="sandbox.html" sandbox="allow-scripts allow-modals" title="Gitifact sandbox"></iframe>
+</div>
+<script src="preview.js"></script>
+</body>
+</html>

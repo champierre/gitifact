@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Malicious</title>
+<meta http-equiv="refresh" content="0; url=https://example.com/">
+<base href="https://example.com/evil/">
+</head>
+<body>
+  <h1>Malicious test page</h1>
+  <p>Each line below reports whether an attack was blocked.</p>
+  <ul id="results"></ul>
+  <form id="form" action="https://example.com/steal" method="post"><input name="x" value="1"><button type="submit">submit</button></form>
+  <script>
+    const results = document.getElementById('results');
+    function report(name, blocked, detail) {
+      const li = document.createElement('li');
+      li.dataset.test = name; li.dataset.blocked = String(blocked);
+      li.textContent = name + ': ' + (blocked ? 'blocked' : 'NOT BLOCKED') + (detail ? ' (' + detail + ')' : '');
+      results.appendChild(li);
+    }
+    function attempt(name, fn) {
+      try { const r = fn(); if (r && typeof r.then === 'function') { r.then(v => report(name, false, String(v)), e => report(name, true, e && e.message)); } else report(name, false, String(r)); }
+      catch (e) { report(name, true, e && e.message); }
+    }
+    attempt('parent DOM', () => parent.document.title);
+    attempt('top DOM', () => top.document.body.innerHTML);
+    attempt('cookies', () => { const c = document.cookie; if (c !== '') return c; throw new Error('empty'); });
+    attempt('localStorage', () => { if (Object.prototype.toString.call(window.localStorage) === '[object Storage]') return 'native storage'; throw new Error('in-memory shim only'); });
+    attempt('chrome.runtime', () => { if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id) return chrome.runtime.id; throw new Error('no chrome.runtime'); });
+    attempt('top navigation', () => { top.location.href = 'https://example.com/'; return 'assigned'; });
+    attempt('window.open', () => { const w = window.open('https://example.com/'); if (w) return 'opened'; throw new Error('null'); });
+    attempt('fetch external', () => fetch('https://example.com/').then(r => 'status ' + r.status));
+    attempt('fetch github.com', () => fetch('https://github.com/').then(r => 'status ' + r.status));
+    attempt('origin', () => { if (location.origin === 'null') throw new Error('opaque origin'); return location.origin; });
+  </script>
+</body>
+</html>

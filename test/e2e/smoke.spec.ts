@@ -1,0 +1,30 @@
+import { test, expect, openBlob, previewTab, previewedFrame, previewFrame } from './extension';
+
+// Public, stable MDN example repository: index.html + styles/style.css + images/firefox-icon.png
+const MDN = 'https://github.com/mdn/beginner-html-site-styled/blob/main/index.html';
+
+test('adds a Preview tab on an HTML blob page and renders CSS + images', async ({ context, extensionId }) => {
+  const page = await context.newPage();
+  await openBlob(page, MDN);
+  const tab = previewTab(page);
+  await expect(tab).toBeVisible();
+  await expect(tab).toHaveCount(1);
+  await tab.click();
+  const inner = await previewedFrame(page, extensionId);
+  await expect(inner.locator('h1')).toContainText('Mozilla is cool');
+  // External stylesheet was inlined and applied.
+  const bodyWidth = await inner.locator('body').evaluate((b) => getComputedStyle(b).width);
+  expect(bodyWidth).toBe('600px');
+  // Relative image was inlined as data: URL and decoded.
+  const img = inner.locator('img').first();
+  await expect(img).toHaveAttribute('src', /^data:image\/png;base64,/);
+  expect(await img.evaluate((i: HTMLImageElement) => i.naturalWidth)).toBeGreaterThan(0);
+  // Scripts are off by default.
+  const pf = previewFrame(page, extensionId);
+  await expect(pf.locator('#opt-js')).not.toBeChecked();
+  await expect(pf.locator('#status')).toContainText('JavaScript off');
+  // Back to code.
+  await page.locator('ul[aria-label="File view"] button', { hasText: /^Code$/ }).click();
+  await expect(page.locator('#gitifact-panel')).toHaveCount(0);
+  await expect(page.locator('#read-only-cursor-text-area')).toBeVisible();
+});

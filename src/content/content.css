@@ -1,0 +1,57 @@
+/* Gitifact: injected into github.com */
+.gitifact-panel {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--borderColor-default, var(--color-border-default, #d1d9e0));
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--bgColor-default, var(--color-canvas-default, #fff));
+}
+.gitifact-frame {
+  display: block;
+  width: 100%;
+  border: 0;
+  background: var(--bgColor-default, var(--color-canvas-default, #fff));
+}
+.gitifact-resizer {
+  height: 10px;
+  cursor: ns-resize;
+  background: var(--bgColor-muted, var(--color-canvas-subtle, #f6f8fa));
+  border-top: 1px solid var(--borderColor-default, var(--color-border-default, #d1d9e0));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+}
+.gitifact-resizer::before {
+  content: "";
+  width: 32px;
+  height: 3px;
+  border-radius: 3px;
+  background: var(--borderColor-default, var(--color-border-default, #d1d9e0));
+}
+.gitifact-resizer:hover::before { background: var(--fgColor-muted, var(--color-fg-muted, #59636e)); }
+.gitifact-drag-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  cursor: ns-resize;
+}
+.gitifact-hidden { display: none !important; }
+/* Fallback button when GitHub's segmented control is not found */
+.gitifact-fallback-btn {
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 20px;
+  padding: 3px 12px;
+  border: 1px solid var(--button-default-borderColor-rest, var(--color-btn-border, #d1d9e0));
+  border-radius: 6px;
+  background: var(--button-default-bgColor-rest, var(--color-btn-bg, #f6f8fa));
+  color: var(--button-default-fgColor-rest, var(--color-btn-text, #24292f));
+  cursor: pointer;
+  margin-right: 8px;
+}
+.gitifact-fallback-btn[aria-pressed="true"] {
+  background: var(--button-default-bgColor-active, var(--color-btn-active-bg, #ebecf0));
+}

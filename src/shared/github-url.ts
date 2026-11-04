@@ -5,11 +5,13 @@ export const HTML_EXT = /\.html?$/i;
 export interface BlobUrlParts {
   owner: string;
   repo: string;
+  /** `blob` (Code view) or `blame`. */
+  view: 'blob' | 'blame';
   /** Everything after `/blob/` (ref and path, undivided), URL-decoded. */
   refAndPath: string;
 }
 
-/** Parses `https://github.com/{owner}/{repo}/blob/{ref...}/{path...}`. Returns null for non-blob URLs. */
+/** Parses `https://github.com/{owner}/{repo}/blob/{ref...}/{path...}` (also `/blame/`). Returns null for other URLs. */
 export function parseBlobUrl(url: string): BlobUrlParts | null {
   let u: URL;
   try {
@@ -18,11 +20,12 @@ export function parseBlobUrl(url: string): BlobUrlParts | null {
     return null;
   }
   if (u.hostname !== 'github.com') return null;
-  const m = u.pathname.match(/^\/([^/]+)\/([^/]+)\/blob\/(.+)$/);
+  const m = u.pathname.match(/^\/([^/]+)\/([^/]+)\/(?:blob|blame)\/(.+)$/);
   if (!m) return null;
   const refAndPath = safeDecode(m[3]!);
   if (!refAndPath || refAndPath.endsWith('/')) return null;
-  return { owner: safeDecode(m[1]!), repo: safeDecode(m[2]!), refAndPath };
+  const view = u.pathname.includes('/blame/') && !u.pathname.match(/\/blob\//) ? 'blame' : 'blob';
+  return { owner: safeDecode(m[1]!), repo: safeDecode(m[2]!), view, refAndPath };
 }
 
 function safeDecode(s: string): string {

@@ -3,10 +3,13 @@ import { parseBlobUrl, refCandidates, pickCandidate, refTypeFromRawHref, toRawRe
 
 describe('parseBlobUrl', () => {
   it('parses a simple blob URL', () => {
-    expect(parseBlobUrl('https://github.com/owner/repo/blob/main/index.html')).toEqual({ owner: 'owner', repo: 'repo', refAndPath: 'main/index.html' });
+    expect(parseBlobUrl('https://github.com/owner/repo/blob/main/index.html')).toEqual({ owner: 'owner', repo: 'repo', view: 'blob', refAndPath: 'main/index.html' });
+  });
+  it('treats the blame view as the same file', () => {
+    expect(parseBlobUrl('https://github.com/owner/repo/blame/main/index.html')).toEqual({ owner: 'owner', repo: 'repo', view: 'blame', refAndPath: 'main/index.html' });
   });
   it('keeps slashes in ref+path and decodes percent escapes', () => {
-    expect(parseBlobUrl('https://github.com/o/r/blob/feature/x/docs/my%20page.html?plain=1#L3')).toEqual({ owner: 'o', repo: 'r', refAndPath: 'feature/x/docs/my page.html' });
+    expect(parseBlobUrl('https://github.com/o/r/blob/feature/x/docs/my%20page.html?plain=1#L3')).toEqual({ owner: 'o', repo: 'r', view: 'blob', refAndPath: 'feature/x/docs/my page.html' });
   });
   it('rejects non-blob and non-github URLs', () => {
     expect(parseBlobUrl('https://github.com/o/r/tree/main/docs')).toBeNull();

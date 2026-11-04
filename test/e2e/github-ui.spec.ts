@@ -101,3 +101,22 @@ test('runs repository JavaScript only after the user enables it', async ({ conte
   await inner.locator('.guessSubmit').click();
   await expect(inner.locator('.lastResult')).toHaveText(/Wrong!|Congratulations/);
 });
+
+test('keeps the Preview tab on the Blame view without auto-opening', async ({ context, extensionId }) => {
+  const page = await context.newPage();
+  await openBlob(page, 'https://github.com/mdn/beginner-html-site-styled/blob/main/index.html');
+  await expect(page.locator('#gitifact-panel')).toHaveCount(1);
+  await page.locator('ul[aria-label="File view"] button', { hasText: /^Blame$/ }).click();
+  await expect(page).toHaveURL(/\/blame\/main\/index\.html$/);
+  await expect(page.locator('#gitifact-panel')).toHaveCount(0);
+  await page.waitForTimeout(800);
+  await expect(previewTab(page)).toHaveCount(1);
+  await expect(page.locator('#gitifact-panel')).toHaveCount(0); // Blame was requested: no auto-open
+  await previewTab(page).click();
+  const inner = await previewedFrame(page, extensionId);
+  await expect(inner.locator('h1')).toContainText('Mozilla is cool');
+  await page.locator('ul[aria-label="File view"] button', { hasText: /^Code$/ }).click();
+  await expect(page).toHaveURL(/\/blob\/main\/index\.html$/);
+  await expect(page.locator('#gitifact-panel')).toHaveCount(0);
+  await expect(previewTab(page)).toHaveCount(1);
+});

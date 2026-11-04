@@ -95,7 +95,10 @@ function analyze(): PageTarget | null {
       ...common,
     });
   }
-  return { previewUrl: chrome.runtime.getURL(`preview.html?${params}`), key: location.pathname };
+  // Code and Blame views of the same file share a key so switching between them keeps the tab
+  // and does not re-trigger the automatic preview.
+  const key = `${parts.owner}/${parts.repo}/${parts.refAndPath}`;
+  return { previewUrl: chrome.runtime.getURL(`preview.html?${params}`), key };
 }
 
 // ---------- DOM hooks ----------

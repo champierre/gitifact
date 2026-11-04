@@ -1,4 +1,4 @@
-import { test, expect, openBlob, previewTab, previewedFrame, previewFrame, setOption } from './extension';
+import { test, expect, openBlob, previewTab, ensurePreview, previewedFrame, previewFrame, setOption } from './extension';
 
 /**
  * These tests render the fixtures under test/fixtures via the real GitHub UI. They need the
@@ -27,7 +27,7 @@ test.describe('fixtures', () => {
   test('1. single HTML file', async ({ context, extensionId }) => {
     const page = await context.newPage();
     await openBlob(page, url('single.html'));
-    await previewTab(page).click();
+    await ensurePreview(page);
     const inner = await previewedFrame(page, extensionId);
     await expect(inner.locator('#title')).toHaveText('Single HTML file');
     await expect(previewFrame(page, extensionId).locator('#status')).toContainText('0 resources inlined');
@@ -36,7 +36,7 @@ test.describe('fixtures', () => {
   test('2. inline CSS', async ({ context, extensionId }) => {
     const page = await context.newPage();
     await openBlob(page, url('inline-css.html'));
-    await previewTab(page).click();
+    await ensurePreview(page);
     const inner = await previewedFrame(page, extensionId);
     await expect(inner.locator('#box')).toHaveCSS('background-color', 'rgb(255, 99, 71)');
     await expect(inner.locator('#box')).toHaveCSS('border-top-color', 'rgb(0, 0, 255)');
@@ -45,7 +45,7 @@ test.describe('fixtures', () => {
   test('3. external CSS with @import and url()', async ({ context, extensionId }) => {
     const page = await context.newPage();
     await openBlob(page, url('external-css.html'));
-    await previewTab(page).click();
+    await ensurePreview(page);
     const inner = await previewedFrame(page, extensionId);
     await expect(inner.locator('#title')).toHaveCSS('color', 'rgb(0, 128, 0)');
     await expect(inner.locator('#imported')).toHaveCSS('color', 'rgb(128, 0, 128)');
@@ -55,7 +55,7 @@ test.describe('fixtures', () => {
   test('4. images (relative, root-relative, srcset, svg, missing, external)', async ({ context, extensionId }) => {
     const page = await context.newPage();
     await openBlob(page, url('images.html'));
-    await previewTab(page).click();
+    await ensurePreview(page);
     const inner = await previewedFrame(page, extensionId);
     for (const id of ['png', 'svg', 'root', 'picture']) {
       expect(await inner.locator(`#${id}`).evaluate((i: HTMLImageElement) => i.naturalWidth), id).toBeGreaterThan(0);
@@ -73,7 +73,7 @@ test.describe('fixtures', () => {
   test('5. JavaScript is off by default and runs when enabled', async ({ context, extensionId }) => {
     const page = await context.newPage();
     await openBlob(page, url('script.html'));
-    await previewTab(page).click();
+    await ensurePreview(page);
     const inner = await previewedFrame(page, extensionId);
     await expect(inner.locator('#out')).toHaveText('JavaScript did not run');
     await setOption(page, extensionId, 'js', true);
@@ -86,7 +86,7 @@ test.describe('fixtures', () => {
   test('6. HTML in a subdirectory, with in-preview link navigation', async ({ context, extensionId }) => {
     const page = await context.newPage();
     await openBlob(page, url('sub/dir/page.html'));
-    await previewTab(page).click();
+    await ensurePreview(page);
     const inner = await previewedFrame(page, extensionId);
     await expect(inner.locator('#title')).toHaveCSS('color', 'rgb(0, 128, 0)');
     await expect(inner.locator('#local')).toHaveCSS('color', 'rgb(255, 0, 0)');
@@ -104,7 +104,7 @@ test.describe('fixtures', () => {
     test.skip(!(await available(SLASH_BRANCH)), `branch ${SLASH_BRANCH} not found; push it first`);
     const page = await context.newPage();
     await openBlob(page, url('sub/dir/page.html', SLASH_BRANCH));
-    await previewTab(page).click();
+    await ensurePreview(page);
     const inner = await previewedFrame(page, extensionId);
     await expect(inner.locator('#title')).toHaveCSS('color', 'rgb(0, 128, 0)');
     const pf = previewFrame(page, extensionId);
@@ -115,7 +115,7 @@ test.describe('fixtures', () => {
   test('10. malicious HTML stays contained inside the preview', async ({ context, extensionId }) => {
     const page = await context.newPage();
     await openBlob(page, url('malicious.html'));
-    await previewTab(page).click();
+    await ensurePreview(page);
     await setOption(page, extensionId, 'js', true);
     const inner = await previewedFrame(page, extensionId);
     await expect(inner.locator('#results li')).toHaveCount(10);

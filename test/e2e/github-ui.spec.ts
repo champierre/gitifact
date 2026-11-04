@@ -1,4 +1,4 @@
-import { test, expect, openBlob, previewTab, previewedFrame, previewFrame } from './extension';
+import { test, expect, openBlob, previewTab, ensurePreview, previewedFrame, previewFrame } from './extension';
 
 const MDN_REPO = 'https://github.com/mdn/beginner-html-site-styled';
 
@@ -18,7 +18,7 @@ test('follows GitHub soft navigation between files', async ({ context, extension
   await page.locator('[data-testid="repos-file-tree-container"]').getByText('index.html', { exact: true }).first().click();
   await expect(page).toHaveURL(/blob\/main\/index\.html$/);
   await expect(previewTab(page)).toHaveCount(1);
-  await previewTab(page).click();
+  await ensurePreview(page);
   const inner = await previewedFrame(page, extensionId);
   await expect(inner.locator('h1')).toContainText('Mozilla is cool');
   // Navigating away removes the preview and the tab.
@@ -31,7 +31,7 @@ test('follows GitHub soft navigation between files', async ({ context, extension
 test('switches viewport width, reloads and exposes an "open in new tab" link', async ({ context, extensionId }) => {
   const page = await context.newPage();
   await openBlob(page, `${MDN_REPO}/blob/main/index.html`);
-  await previewTab(page).click();
+  await ensurePreview(page);
   await previewedFrame(page, extensionId);
   // Keep GitHub's sticky header from overlapping the preview toolbar.
   await page.evaluate(() => window.scrollTo(0, 0));
@@ -56,7 +56,7 @@ test('switches viewport width, reloads and exposes an "open in new tab" link', a
 test('resizes the embedded preview by dragging the handle', async ({ context, extensionId }) => {
   const page = await context.newPage();
   await openBlob(page, `${MDN_REPO}/blob/main/index.html`);
-  await previewTab(page).click();
+  await ensurePreview(page);
   await previewedFrame(page, extensionId);
   const frame = page.locator('#gitifact-panel iframe');
   const before = (await frame.boundingBox())!.height;
@@ -74,7 +74,7 @@ test('matches GitHub dark mode', async ({ context, extensionId }) => {
   const page = await context.newPage();
   await page.emulateMedia({ colorScheme: 'dark' });
   await openBlob(page, `${MDN_REPO}/blob/main/index.html`);
-  await previewTab(page).click();
+  await ensurePreview(page);
   await previewedFrame(page, extensionId);
   const pf = previewFrame(page, extensionId);
   await expect(pf.locator('html')).toHaveAttribute('data-theme', 'dark');
@@ -86,7 +86,7 @@ test('runs repository JavaScript only after the user enables it', async ({ conte
   // MDN number guessing game: a single HTML file with an inline <script>.
   const page = await context.newPage();
   await openBlob(page, 'https://github.com/mdn/learning-area/blob/main/javascript/introduction-to-js-1/first-splash/number-guessing-game.html');
-  await previewTab(page).click();
+  await ensurePreview(page);
   let inner = await previewedFrame(page, extensionId);
   await inner.locator('.guessField').fill('50');
   await inner.locator('.guessSubmit').click();

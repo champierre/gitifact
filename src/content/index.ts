@@ -17,6 +17,8 @@ interface PageTarget {
 }
 
 let currentKey: string | null = null;
+/** Whether the preview was already auto-opened for the current page (so "Code" stays selected after the user clicks it). */
+let autoOpened = false;
 let panel: HTMLElement | null = null;
 let hiddenEls: Element[] = [];
 let frame: HTMLIFrameElement | null = null;
@@ -249,8 +251,14 @@ function ensure(): void {
   if (currentKey !== target.key) {
     teardown();
     currentKey = target.key;
+    autoOpened = false;
   }
   injectTab(target);
+  // Open the preview automatically the first time an HTML file is shown.
+  if (!autoOpened && !panel && document.getElementById(TAB_ID)) {
+    autoOpened = true;
+    activate(target);
+  }
   // GitHub re-rendered the content area underneath an active preview: re-hide it.
   if (panel && panel.isConnected) {
     const sticky = findStickyHeader();
@@ -265,7 +273,9 @@ function ensure(): void {
       }
     }
   } else if (panel && !panel.isConnected) {
+    // GitHub replaced the container (e.g. React hydration after the first paint): re-open the preview.
     deactivate();
+    activate(target);
   }
 }
 

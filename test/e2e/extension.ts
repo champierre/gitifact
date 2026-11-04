@@ -43,6 +43,13 @@ export function previewTab(page: Page) {
   return page.locator('[data-gitifact="preview-button"]');
 }
 
+/** Makes sure the preview panel is open (it opens automatically; clicking the tab would toggle it). */
+export async function ensurePreview(page: Page): Promise<void> {
+  await previewTab(page).waitFor();
+  if ((await page.locator('#gitifact-panel').count()) === 0) await previewTab(page).click();
+  await page.locator('#gitifact-panel').waitFor();
+}
+
 /** Returns the Playwright frame for the previewed document (github page → preview.html → sandbox.html → srcdoc). */
 export async function previewedFrame(page: Page, extensionId: string, timeout = 30_000): Promise<Frame> {
   const deadline = Date.now() + timeout;

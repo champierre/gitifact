@@ -14,6 +14,7 @@ repository are resolved automatically.
 ## Features
 
 - **Preview tab** next to GitHub's own *Code | Blame* control on any `.html` / `.htm` blob page.
+  The preview opens automatically when an HTML file is shown; click *Code* to see the source.
 - **Resource resolution**: relative and root-relative `<link rel=stylesheet>`, `<script src>`, `<img>`,
   `srcset`, `<video>`/`<audio>`/`<source>`, nested `<iframe>`, CSS `url()` and `@import` are fetched
   from the same repository and ref and inlined.
@@ -46,8 +47,8 @@ card in `chrome://extensions`.
 
 ## Usage
 
-- **Preview / Code / Blame**: the Preview tab swaps GitHub's code view for the rendered page. Click
-  *Code* or *Blame* to go back.
+- **Preview / Code / Blame**: opening an HTML file shows the rendered page immediately. Click *Code*
+  or *Blame* to go back to GitHub's views, and *Preview* to render again.
 - **JavaScript**: scripts (inline, `<script src>` from the repository, and inline event handlers) are
   only executed while this box is checked. Unchecking re-renders without scripts.
 - **External**: when unchecked, every request to a host other than the repository is blocked by a

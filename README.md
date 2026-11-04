@@ -19,6 +19,8 @@ repository are resolved automatically.
   `srcset`, `<video>`/`<audio>`/`<source>`, nested `<iframe>`, CSS `url()` and `@import` are fetched
   from the same repository and ref and inlined.
 - **Branches, tags and commits**, including branch names containing `/`.
+- **Private repositories** work when you are signed in to GitHub in the same browser: files are
+  fetched through `github.com/…/raw/…` with your session, no token to configure.
 - **Sandboxed rendering**: repository content never runs in the GitHub page or in the extension's
   own origin (details under [Security](#security)).
 - **JavaScript off by default**; one checkbox turns it on for the current preview.
@@ -78,7 +80,10 @@ github.com page ──content script──▶ adds the Preview tab, embeds <ifra
                  <iframe sandbox srcdoc="…">  ◀── the repository's HTML renders here
 ```
 
-Fetching goes through `raw.githubusercontent.com`. That host serves every file as `text/plain` with
+Fetching goes through `raw.githubusercontent.com`, anonymously. If that returns 404 the service worker
+retries via `https://github.com/{owner}/{repo}/raw/{ref}/{path}` with the browser's GitHub cookies;
+for repositories the signed-in user can read, GitHub redirects to a short-lived tokenised raw URL.
+`raw.githubusercontent.com` serves every file as `text/plain` with
 `X-Content-Type-Options: nosniff`, so stylesheets and scripts cannot be referenced by URL; instead the
 rewriter (`src/shared/resolve.ts`) fetches them through the service worker and inlines them as
 `<style>`/`<script>` elements or `data:` URLs. The same is done for images, fonts and media, and
@@ -111,12 +116,15 @@ Repository HTML and JavaScript are treated as untrusted code.
   `event.source` is the sandbox frame. The content script only accepts messages from the preview
   frame with the extension's origin, and the preview page only accepts theme/height messages from
   `https://github.com`.
-- The service worker only fetches `https://raw.githubusercontent.com/*`, with `credentials: 'omit'`,
-  and only on behalf of the extension's own pages.
+- The service worker only fetches `https://raw.githubusercontent.com/*` (anonymously) and, as a
+  fallback for private repositories, `https://github.com/{owner}/{repo}/raw/*` with the browser's
+  session cookies, and only on behalf of the extension's own pages. The extension never sees or
+  stores a token; the previewed document never gets credentials.
 - JavaScript and external-resource flags are never taken from the preview URL, so a crafted link
   cannot open a preview with scripts pre-enabled.
 - Permissions: a content script on `https://github.com/*` and host access to
-  `https://raw.githubusercontent.com/*`. No `storage`, `tabs`, `scripting` or other permissions.
+  `https://raw.githubusercontent.com/*` and `https://github.com/*`. No `storage`, `tabs`,
+  `scripting` or other permissions.
   Preferences (width, height) live in the extension page's own `localStorage`.
 - The extension pages use `script-src 'self'`; no remote code, no `eval`.
 
@@ -126,7 +134,8 @@ the same exposure as opening an untrusted page in an incognito window.
 
 ## Known limitations
 
-- **Public repositories only.** Private repositories need authentication, which is not implemented.
+- **Private repositories** require being signed in to GitHub in the same browser profile; there is
+  no token-based access (for example for GitHub Enterprise Server hosts, which are not supported).
 - **Resources referenced at runtime are not resolved.** `fetch('./data.json')`, `new Image().src =
   'x.png'` assigned from JavaScript, CSS added by scripts, service workers and web workers cannot
   reach repository files (there is no network path to the repository from the sandbox). Only

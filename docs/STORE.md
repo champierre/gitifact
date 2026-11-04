@@ -36,18 +36,21 @@ Bump `version` in `package.json` first; the build copies it into `manifest.json`
   > • Desktop/mobile widths, resizable height, reload, open in a new tab
   > • Matches GitHub's light and dark themes
   >
-  > Public repositories only. Source: https://github.com/champierre/gitifact
+  > Works with private repositories when you are signed in to GitHub. Source: https://github.com/champierre/gitifact
 
 - **Category**: Developer Tools
 - **Language**: English
 
 ## 3. Privacy tab
 
-- **Single purpose**: Preview HTML files stored in public GitHub repositories inside the GitHub UI.
+- **Single purpose**: Preview HTML files stored in GitHub repositories inside the GitHub UI.
 - **Permission justifications**:
   - `host_permissions: https://raw.githubusercontent.com/*` — fetches the HTML file and the CSS,
     JavaScript, image and font files it references, from the public raw-content host, without
     credentials.
+  - `host_permissions: https://github.com/*` — for private repositories, fetches the same files via
+    `github.com/{owner}/{repo}/raw/…` using the user's existing GitHub session, so that no access
+    token has to be entered or stored.
   - Content script on `https://github.com/*` — adds the Preview tab to file pages and embeds the
     preview. It reads only the page URL, the branch picker text and the page title to determine the
     repository, ref and path.

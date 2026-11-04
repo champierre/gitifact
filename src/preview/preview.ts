@@ -169,7 +169,7 @@ async function load(): Promise<void> {
     setStatus(`Fetching ${current.path}…`);
     const main = await swRequest<FetchResult>({ type: 'fetch', url: rawFileUrl(current) });
     if (gen !== generation) return;
-    if (!main.ok) throw new Error(`Could not fetch ${rawFileUrl(current)}\n${main.error}${main.status === 404 ? '\n(Private repositories are not supported yet.)' : ''}`);
+    if (!main.ok) throw new Error(`Could not fetch ${rawFileUrl(current)}\n${main.error}${main.status === 404 ? '\nIf this is a private repository, sign in to GitHub in this browser (the preview uses your GitHub session) and reload.' : ''}`);
     if (main.encoding !== 'text') throw new Error('The file is not a text file.');
     setStatus('Resolving resources…');
     const { html, report } = await rewriteHtml(main.body, {

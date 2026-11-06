@@ -12,20 +12,7 @@ function send(msg: FromSandbox): void {
   window.parent.postMessage(msg, '*');
 }
 
-function applyWidth(width: number | null): void {
-  if (!frame) return;
-  if (width) {
-    frame.style.width = `${width}px`;
-    frame.classList.add('fixed');
-    document.body.classList.add('constrained');
-  } else {
-    frame.style.width = '100%';
-    frame.classList.remove('fixed');
-    document.body.classList.remove('constrained');
-  }
-}
-
-function render(html: string, allowScripts: boolean, width: number | null): void {
+function render(html: string, allowScripts: boolean): void {
   frame?.remove();
   frame = document.createElement('iframe');
   // No allow-same-origin: the document gets an opaque origin, no cookies/storage, no DOM access to us.
@@ -36,7 +23,6 @@ function render(html: string, allowScripts: boolean, width: number | null): void
   frame.addEventListener('load', () => send({ type: 'gitifact:rendered' }));
   frame.srcdoc = html;
   document.body.appendChild(frame);
-  applyWidth(width);
 }
 
 window.addEventListener('message', (event: MessageEvent) => {
@@ -45,11 +31,7 @@ window.addEventListener('message', (event: MessageEvent) => {
 
   if (event.source === window.parent) {
     const msg = data as ToSandbox;
-    if (msg.type === 'gitifact:render' && typeof msg.html === 'string') {
-      render(msg.html, msg.allowScripts === true, typeof msg.width === 'number' ? msg.width : null);
-    } else if (msg.type === 'gitifact:width') {
-      applyWidth(typeof msg.width === 'number' ? msg.width : null);
-    }
+    if (msg.type === 'gitifact:render' && typeof msg.html === 'string') render(msg.html, msg.allowScripts === true);
     return;
   }
 

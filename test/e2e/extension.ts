@@ -66,17 +66,6 @@ export async function previewedFrame(page: Page, extensionId: string, timeout = 
   throw new Error('previewed document did not appear');
 }
 
-/** Toggles a preview option and waits until the preview has been re-rendered with it. */
-export async function setOption(page: Page, extensionId: string, option: 'js' | 'external', on: boolean): Promise<void> {
-  const pf = previewFrame(page, extensionId);
-  await page.evaluate(() => window.scrollTo(0, 0));
-  await pf.locator('#frame-wrap').evaluate((el) => el.classList.add('loading'));
-  await pf.locator(option === 'js' ? '#opt-js' : '#opt-external').setChecked(on);
-  await pf.locator('#frame-wrap').evaluate((el) => el.classList.add('loading'));
-  await pf.locator('#status').filter({ hasText: option === 'js' ? (on ? 'JavaScript on' : 'JavaScript off') : on ? 'external resources allowed' : 'external resources blocked' }).waitFor();
-  await pf.locator('#frame-wrap:not(.loading)').waitFor();
-}
-
 export function previewFrame(page: Page, extensionId: string): Frame {
   const f = page.frames().find((f) => f.url().startsWith(`chrome-extension://${extensionId}/preview.html`));
   if (!f) throw new Error('preview frame not found');

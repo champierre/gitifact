@@ -21,10 +21,10 @@ test('adds a Preview tab on an HTML blob page, opens it automatically and render
   const img = inner.locator('img').first();
   await expect(img).toHaveAttribute('src', /^data:image\/png;base64,/);
   expect(await img.evaluate((i: HTMLImageElement) => i.naturalWidth)).toBeGreaterThan(0);
-  // Scripts are off by default.
+  // The toolbar only offers Reload and Open in new tab.
   const pf = previewFrame(page, extensionId);
-  await expect(pf.locator('#opt-js')).not.toBeChecked();
-  await expect(pf.locator('#status')).toContainText('JavaScript off');
+  await expect(pf.locator('.toolbar-right > *')).toHaveText(['Reload', 'Open in new tab']);
+  await expect(pf.locator('#status')).toContainText('inlined');
   // Back to code.
   await page.locator('ul[aria-label="File view"] button', { hasText: /^Code$/ }).click();
   await expect(page.locator('#gitifact-panel')).toHaveCount(0);

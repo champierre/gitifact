@@ -1,4 +1,4 @@
-import { test, expect, openBlob, previewTab, ensurePreview, previewedFrame, previewFrame, setOption } from './extension';
+import { test, expect, openBlob, previewTab, ensurePreview, previewedFrame, previewFrame } from './extension';
 
 /**
  * These tests render the fixtures under test/fixtures via the real GitHub UI. They need the
@@ -60,27 +60,21 @@ test.describe('fixtures', () => {
     for (const id of ['png', 'svg', 'root', 'picture']) {
       expect(await inner.locator(`#${id}`).evaluate((i: HTMLImageElement) => i.naturalWidth), id).toBeGreaterThan(0);
     }
-    expect(await inner.locator('#external').evaluate((i: HTMLImageElement) => i.naturalWidth)).toBe(0);
+    // External resources are allowed → the avatar loads.
+    await expect.poll(() => inner.locator('#external').evaluate((i: HTMLImageElement) => i.naturalWidth)).toBeGreaterThan(0);
     const pf = previewFrame(page, extensionId);
-    await expect(pf.locator('#warnings-summary')).toContainText('2 resources could not be loaded');
+    await expect(pf.locator('#warnings-summary')).toContainText('1 resource could not be loaded');
     await expect(pf.locator('#warnings-list')).toContainText('does-not-exist.png');
-    // Allow external resources → the avatar loads.
-    await setOption(page, extensionId, 'external', true);
-    const inner2 = await previewedFrame(page, extensionId);
-    await expect.poll(() => inner2.locator('#external').evaluate((i: HTMLImageElement) => i.naturalWidth)).toBeGreaterThan(0);
   });
 
-  test('5. JavaScript is off by default and runs when enabled', async ({ context, extensionId }) => {
+  test('5. JavaScript runs', async ({ context, extensionId }) => {
     const page = await context.newPage();
     await openBlob(page, url('script.html'));
     await ensurePreview(page);
     const inner = await previewedFrame(page, extensionId);
-    await expect(inner.locator('#out')).toHaveText('JavaScript did not run');
-    await setOption(page, extensionId, 'js', true);
-    const inner2 = await previewedFrame(page, extensionId);
-    await expect(inner2.locator('#out')).toHaveText('JavaScript ran: 4');
-    await inner2.locator('#btn').click();
-    await expect(inner2.locator('#out')).toHaveText('clicked');
+    await expect(inner.locator('#out')).toHaveText('JavaScript ran: 4');
+    await inner.locator('#btn').click();
+    await expect(inner.locator('#out')).toHaveText('clicked');
   });
 
   test('6. HTML in a subdirectory, with in-preview link navigation', async ({ context, extensionId }) => {
@@ -91,9 +85,7 @@ test.describe('fixtures', () => {
     await expect(inner.locator('#title')).toHaveCSS('color', 'rgb(0, 128, 0)');
     await expect(inner.locator('#local')).toHaveCSS('color', 'rgb(255, 0, 0)');
     expect(await inner.locator('#up').evaluate((i: HTMLImageElement) => i.naturalWidth)).toBeGreaterThan(0);
-    await setOption(page, extensionId, 'js', true);
-    const inner2 = await previewedFrame(page, extensionId);
-    await inner2.locator('#link').click();
+    await inner.locator('#link').click();
     const pf = previewFrame(page, extensionId);
     await expect(pf.locator('#file-link')).toHaveText(`${FIX}/single.html`);
     await pf.locator('#frame-wrap:not(.loading)').waitFor();
@@ -116,7 +108,6 @@ test.describe('fixtures', () => {
     const page = await context.newPage();
     await openBlob(page, url('malicious.html'));
     await ensurePreview(page);
-    await setOption(page, extensionId, 'js', true);
     const inner = await previewedFrame(page, extensionId);
     await expect(inner.locator('#results li')).toHaveCount(10);
     const blocked = await inner.locator('#results li').evaluateAll((lis) => lis.map((li) => li.dataset.blocked));

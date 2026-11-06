@@ -23,9 +23,7 @@ export type FetchResult =
 export type ProbeResult = { index: number } | { index: -1 };
 
 /** Messages between the preview page (parent) and the sandbox page (child iframe). */
-export type ToSandbox =
-  | { type: 'gitifact:render'; html: string; allowScripts: boolean; width: number | null }
-  | { type: 'gitifact:width'; width: number | null };
+export type ToSandbox = { type: 'gitifact:render'; html: string; allowScripts: boolean };
 
 export type FromSandbox =
   | { type: 'gitifact:sandbox-ready' }

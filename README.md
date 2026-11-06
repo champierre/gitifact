@@ -4,8 +4,8 @@
 
 Gitifact is a Chrome extension that adds a **Preview** tab to HTML files on GitHub. Click it and the
 file is rendered as a real web page, right inside the GitHub file view, without downloading anything
-or deploying to GitHub Pages. Relative CSS, images and (optionally) JavaScript from the same
-repository are resolved automatically.
+or deploying to GitHub Pages. Relative CSS, images and JavaScript from the same repository are
+resolved automatically.
 
 | Light mode | Dark mode |
 | --- | --- |
@@ -23,9 +23,9 @@ repository are resolved automatically.
   fetched through `github.com/…/raw/…` with your session, no token to configure.
 - **Sandboxed rendering**: repository content never runs in the GitHub page or in the extension's
   own origin (details under [Security](#security)).
-- **JavaScript off by default**; one checkbox turns it on for the current preview.
-- **External resources off by default** (CDNs, web fonts, remote images); one checkbox allows them.
-- Desktop / Mobile (375px) width toggle, resizable height, Reload, Open in new tab.
+- **JavaScript runs** inside the sandbox, so interactive pages work as they would on a web server.
+- **External resources** (CDNs, web fonts, remote images) are loaded over `https:`.
+- Resizable height, Reload, Open in new tab.
 - Follows GitHub's client-side navigation and light/dark/auto color modes.
 - Error and warning reporting: missing files, blocked external resources, script errors.
 
@@ -51,20 +51,15 @@ card in `chrome://extensions`.
 
 - **Preview / Code / Blame**: opening an HTML file shows the rendered page immediately. Click *Code*
   or *Blame* to go back to GitHub's views, and *Preview* to render again.
-- **JavaScript**: scripts (inline, `<script src>` from the repository, and inline event handlers) are
-  only executed while this box is checked. Unchecking re-renders without scripts.
-- **External**: when unchecked, every request to a host other than the repository is blocked by a
-  Content Security Policy and listed under *resources could not be loaded*. Check it to allow
-  `https:` resources such as CDN scripts, Google Fonts or remote images.
-- **Desktop / Mobile**: renders the page at full width or at 375px.
 - **Reload**: fetches the file and its resources again (useful after pushing a change; GitHub's raw
   CDN caches for up to five minutes).
-- **Open in new tab**: opens the same preview as a full browser tab. Settings reset to the safe
-  defaults (JavaScript and external resources off) in the new tab.
+- **Open in new tab**: opens the same preview as a full browser tab.
 - **Resize**: drag the handle under the preview to change its height. The height is remembered.
-- **Links**: with JavaScript enabled, links to other HTML files in the repository navigate within the
-  preview; links to other repository files open the file on GitHub in a new tab. With JavaScript
-  disabled, repository links are inert.
+- **Scripts**: inline scripts, `<script src>` from the repository and inline event handlers run
+  inside the sandbox. `https:` resources such as CDN scripts, Google Fonts or remote images are
+  loaded; `http:` resources are blocked and listed under *resources could not be loaded*.
+- **Links**: links to other HTML files in the repository navigate within the preview; links to other
+  repository files open the file on GitHub in a new tab.
 
 ## How it works
 
@@ -99,18 +94,18 @@ the service worker probes each candidate on `raw.githubusercontent.com` until on
 Repository HTML and JavaScript are treated as untrusted code.
 
 - The HTML is never injected into the GitHub page. It is rendered inside a sandboxed `<iframe>`
-  (`sandbox=""` or `sandbox="allow-scripts allow-modals"`, never `allow-same-origin`) that itself
+  (`sandbox="allow-scripts allow-modals"`, never `allow-same-origin`) that itself
   lives inside a Manifest V3 *sandbox page*. The previewed document therefore has an opaque origin:
   no cookies, no Web Storage of GitHub or the extension, no access to `chrome.*` APIs, no DOM access
   to any parent frame.
 - No `allow-top-navigation`, `allow-popups` or `allow-forms`: the page cannot navigate GitHub, open
   windows or submit forms. `<meta http-equiv="refresh">` and `<base>` are removed.
-- A `<meta http-equiv="Content-Security-Policy">` is injected into every previewed document. By
-  default it is `default-src 'none'` plus `data:`/`blob:` for inlined resources, `script-src 'none'`,
-  `object-src 'none'`, `base-uri 'none'`, `form-action 'none'`. Enabling JavaScript adds
-  `'unsafe-inline' 'unsafe-eval'` to `script-src`; enabling External adds `https:` to the resource
-  directives. The manifest's sandbox CSP is the upper bound and never exceeded.
-- `postMessage` is validated at every hop: the sandbox page only accepts `render`/`width` messages
+- A `<meta http-equiv="Content-Security-Policy">` is injected into every previewed document:
+  `default-src 'none'` plus `data:`/`blob:` for inlined resources and `https:` for external ones,
+  `script-src 'unsafe-inline' 'unsafe-eval' data: blob: https:`, `object-src 'none'`,
+  `base-uri 'none'`, `form-action 'none'`. The manifest's sandbox CSP is the upper bound and never
+  exceeded.
+- `postMessage` is validated at every hop: the sandbox page only accepts `render` messages
   from its parent, relays only `navigate`/`error` messages (with type-checked, length-limited
   fields) from the previewed document, and the preview page only accepts messages whose
   `event.source` is the sandbox frame. The content script only accepts messages from the preview
@@ -120,17 +115,15 @@ Repository HTML and JavaScript are treated as untrusted code.
   fallback for private repositories, `https://github.com/{owner}/{repo}/raw/*` with the browser's
   session cookies, and only on behalf of the extension's own pages. The extension never sees or
   stores a token; the previewed document never gets credentials.
-- JavaScript and external-resource flags are never taken from the preview URL, so a crafted link
-  cannot open a preview with scripts pre-enabled.
 - Permissions: a content script on `https://github.com/*` and host access to
   `https://raw.githubusercontent.com/*` and `https://github.com/*`. No `storage`, `tabs`,
   `scripting` or other permissions.
-  Preferences (width, height) live in the extension page's own `localStorage`.
+  The preview height preference lives in the extension page's own `localStorage`.
 - The extension pages use `script-src 'self'`; no remote code, no `eval`.
 
-Known residual risks: with JavaScript enabled the page can still use CPU, show `alert()` dialogs,
-and, with External enabled, make requests to arbitrary `https:` hosts (with no credentials). This is
-the same exposure as opening an untrusted page in an incognito window.
+Known residual risks: the previewed page can use CPU, show `alert()` dialogs and make requests to
+arbitrary `https:` hosts (with no credentials). This is the same exposure as opening an untrusted
+page in an incognito window.
 
 ## Known limitations
 
@@ -185,8 +178,8 @@ test/fixtures/            HTML/CSS/JS fixtures rendered through the real GitHub 
 - `npm test` runs the unit tests for GitHub URL parsing, ref disambiguation, path normalisation and
   the HTML/CSS rewriter (inlining, `@import`, `srcset`, `<base>`, CSP injection, link rewriting…).
 - `npm run test:e2e` launches Chromium with the built extension and covers: Preview tab injection,
-  no tab on non-HTML files, CSS/image rendering on a public repository, JavaScript off-by-default and
-  opt-in, viewport toggle, reload, open-in-new-tab, height resize, GitHub dark mode, client-side
+  no tab on non-HTML files, CSS/image rendering on a public repository, JavaScript execution,
+  reload, open-in-new-tab, height resize, GitHub dark mode, client-side
   navigation, and sandbox escape attempts (`test/fixtures/malicious.html`: parent/top DOM access,
   cookies, storage, `chrome.runtime`, top navigation, popups, external and github.com fetches,
   form submission, meta refresh).

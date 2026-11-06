@@ -16,18 +16,14 @@ const params = new URLSearchParams(location.search);
 const embedded = params.get('embedded') === '1';
 const sandbox = $<HTMLIFrameElement>('sandbox');
 const frameWrap = $('frame-wrap');
-const optJs = $<HTMLInputElement>('opt-js');
-const optExternal = $<HTMLInputElement>('opt-external');
 const statusEl = $('status');
 const errorEl = $('error');
 const warningsEl = $<HTMLDetailsElement>('warnings');
-const MOBILE_WIDTH = 375;
 const GITHUB_ORIGIN = 'https://github.com';
 
 let loc: FileLocation | null = null;
 let sandboxReady = false;
 let pendingRender: ToSandbox | null = null;
-let width: number | null = localStorage.getItem('gitifact.width') === 'mobile' ? MOBILE_WIDTH : null;
 let generation = 0;
 
 // ---------- theme ----------
@@ -124,13 +120,6 @@ function updateHeader(): void {
   document.title = `${loc.path} · ${loc.owner}/${loc.repo} — Gitifact`;
   $<HTMLAnchorElement>('newtab').href = chrome.runtime.getURL(`preview.html?${locationToParams(loc, { theme: document.documentElement.dataset.theme || 'light' })}`);
 }
-function setWidth(w: number | null): void {
-  width = w;
-  $('width-desktop').setAttribute('aria-pressed', String(w === null));
-  $('width-mobile').setAttribute('aria-pressed', String(w !== null));
-  localStorage.setItem('gitifact.width', w === null ? 'desktop' : 'mobile');
-  toSandbox({ type: 'gitifact:width', width: w });
-}
 
 // ---------- loading ----------
 async function resolveLocation(): Promise<FileLocation> {
@@ -174,18 +163,15 @@ async function load(): Promise<void> {
     setStatus('Resolving resources…');
     const { html, report } = await rewriteHtml(main.body, {
       location: current,
-      allowScripts: optJs.checked,
-      allowExternal: optExternal.checked,
+      allowScripts: true,
+      allowExternal: true,
       fetchRepoFile: (path) => swRequest<FetchResult>({ type: 'fetch', url: rawFileUrl(current, path) }),
     });
     if (gen !== generation) return;
-    const msg: ToSandbox = { type: 'gitifact:render', html, allowScripts: optJs.checked, width };
+    const msg: ToSandbox = { type: 'gitifact:render', html, allowScripts: true };
     if (sandboxReady) toSandbox(msg);
     else pendingRender = msg;
-    const parts = [`${report.resolved} resource${report.resolved === 1 ? '' : 's'} inlined`];
-    parts.push(optJs.checked ? 'JavaScript on' : 'JavaScript off');
-    parts.push(optExternal.checked ? 'external resources allowed' : 'external resources blocked');
-    setStatus(parts.join(' · '));
+    setStatus(`${report.resolved} resource${report.resolved === 1 ? '' : 's'} inlined`);
     showWarnings(report);
   } catch (e) {
     if (gen !== generation) return;
@@ -210,11 +196,6 @@ function navigateTo(path: string): void {
 
 // ---------- wire up ----------
 $('reload').addEventListener('click', () => void load());
-optJs.addEventListener('change', () => void load());
-optExternal.addEventListener('change', () => void load());
-$('width-desktop').addEventListener('click', () => setWidth(null));
-$('width-mobile').addEventListener('click', () => setWidth(MOBILE_WIDTH));
-setWidth(width);
 if (embedded) {
   $('newtab').hidden = false;
   const saved = Number(localStorage.getItem('gitifact.height'));

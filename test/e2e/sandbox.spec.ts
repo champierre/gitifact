@@ -22,7 +22,7 @@ test('malicious HTML cannot escape the sandbox even with JavaScript enabled', as
   const page = await context.newPage();
   await page.goto(`chrome-extension://${extensionId}/sandbox.html`);
   // Top-level page: window.parent === window, so posting to ourselves is accepted as "from parent".
-  await page.evaluate((h) => window.postMessage({ type: 'gitifact:render', html: h, allowScripts: true, width: null }, '*'), html);
+  await page.evaluate((h) => window.postMessage({ type: 'gitifact:render', html: h, allowScripts: true }, '*'), html);
   const inner = page.frameLocator('iframe');
   await expect(inner.locator('#results li')).toHaveCount(10);
   const rows = await inner.locator('#results li').evaluateAll((lis) => lis.map((li) => [li.dataset.test, li.dataset.blocked, li.textContent]));
@@ -41,7 +41,7 @@ test('scripts do not run unless allowed', async ({ context, extensionId }) => {
   const page = await context.newPage();
   await page.goto(`chrome-extension://${extensionId}/sandbox.html`);
   const html = `<!DOCTYPE html><html><head><meta http-equiv="Content-Security-Policy" content="script-src 'none'"></head><body><p id="p">static</p><script>document.getElementById('p').textContent='ran'</script></body></html>`;
-  await page.evaluate((h) => window.postMessage({ type: 'gitifact:render', html: h, allowScripts: false, width: null }, '*'), html);
+  await page.evaluate((h) => window.postMessage({ type: 'gitifact:render', html: h, allowScripts: false }, '*'), html);
   const inner = page.frameLocator('iframe');
   await expect(inner.locator('#p')).toHaveText('static');
   await page.waitForTimeout(300);
@@ -64,7 +64,7 @@ test('in-repository links are relayed to the parent as navigation requests, noth
     allowExternal: false,
     parser: new dom.window.DOMParser(),
   });
-  await page.evaluate((h) => window.postMessage({ type: 'gitifact:render', html: h, allowScripts: true, width: null }, '*'), html);
+  await page.evaluate((h) => window.postMessage({ type: 'gitifact:render', html: h, allowScripts: true }, '*'), html);
   const inner = page.frameLocator('iframe');
   await expect(inner.locator('#l')).toBeVisible();
   await inner.locator('#l').click();

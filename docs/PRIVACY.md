@@ -8,7 +8,7 @@ GitHub web interface.
   and, for private repositories, to `https://github.com/<owner>/<repo>/raw/` using the GitHub
   session already present in your browser, to download the file being previewed and the files it
   references. The extension does not read, store or forward tokens or cookies.
-- The extension stores two display preferences (preview width and height) locally in the browser.
+- The extension stores one display preference (preview height) locally in the browser.
   Nothing is sent to the extension author or any third party.
 - GitHub pages are modified only to add the Preview tab and the preview frame.
 

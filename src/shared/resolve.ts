@@ -377,7 +377,7 @@ function warn(ctx: Ctx, path: string, reason: string): void {
 }
 
 function noteExternal(ctx: Ctx, url: string): void {
-  if (!ctx.allowExternal) warn(ctx, url, 'external resource blocked (enable "External" to allow)');
+  if (!ctx.allowExternal) warn(ctx, url, 'external resource blocked');
 }
 
 /** Classifies a reference found in the document relative to `fromPath` (a repo path). */

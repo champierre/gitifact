@@ -31,9 +31,9 @@ Bump `version` in `package.json` first; the build copies it into `manifest.json`
   >
   > • Resolves relative CSS, images, fonts and scripts from the same repository and ref
   > • Works with branches (including names containing "/"), tags and commits
-  > • JavaScript and external resources are off by default and can be enabled per preview
+  > • Runs the page's JavaScript and loads CDN resources, so interactive pages just work
   > • Rendering happens in a sandboxed frame with a strict Content Security Policy
-  > • Desktop/mobile widths, resizable height, reload, open in a new tab
+  > • Resizable height, reload, open in a new tab
   > • Matches GitHub's light and dark themes
   >
   > Works with private repositories when you are signed in to GitHub. Source: https://github.com/champierre/gitifact
@@ -56,9 +56,9 @@ Bump `version` in `package.json` first; the build copies it into `manifest.json`
     repository, ref and path.
   - No `storage`, `tabs`, `scripting`, `cookies` or other permissions are requested.
 - **Remote code**: No. All code ships in the package; repository scripts run only inside a sandboxed
-  frame with an opaque origin and only when the user enables them.
+  frame with an opaque origin, isolated from GitHub and from the extension.
 - **Data usage**: The extension does not collect, transmit or store any user data. Requests go only to
-  `raw.githubusercontent.com` for files the user explicitly previews. The width/height preferences are
+  `raw.githubusercontent.com` for files the user explicitly previews. The height preference is
   stored locally in the extension page's localStorage.
 - Certify the data-usage disclosures accordingly (no data collected).
 
@@ -68,7 +68,7 @@ Host `docs/PRIVACY.md` (for example via the repository or GitHub Pages) and link
 
 ## 5. Review tips
 
-- Mention in the reviewer notes that repository content is rendered in a Manifest V3 sandbox page and
-  that JavaScript execution is opt-in.
+- Mention in the reviewer notes that repository content is rendered in a Manifest V3 sandbox page
+  with an opaque origin and a strict Content Security Policy.
 - Provide a test URL: <https://github.com/mdn/beginner-html-site-styled/blob/main/index.html>.
 - Keep `minimum_chrome_version` (120) in sync with the esbuild `target`.

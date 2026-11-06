@@ -28,7 +28,7 @@ test('follows GitHub soft navigation between files', async ({ context, extension
   await expect(previewTab(page)).toHaveCount(0);
 });
 
-test('reloads and exposes an "open in new tab" link', async ({ context, extensionId }) => {
+test('exposes an "open in new tab" link', async ({ context, extensionId }) => {
   const page = await context.newPage();
   await openBlob(page, `${MDN_REPO}/blob/main/index.html`);
   await ensurePreview(page);
@@ -36,7 +36,6 @@ test('reloads and exposes an "open in new tab" link', async ({ context, extensio
   // Keep GitHub's sticky header from overlapping the preview toolbar.
   await page.evaluate(() => window.scrollTo(0, 0));
   const pf = previewFrame(page, extensionId);
-  await pf.locator('#reload').click();
   await expect(pf.locator('#status')).toContainText('inlined');
   const href = await pf.locator('#newtab').getAttribute('href');
   expect(href).toMatch(new RegExp(`^chrome-extension://${extensionId}/preview.html\\?owner=mdn&repo=beginner-html-site-styled`));

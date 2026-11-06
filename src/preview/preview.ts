@@ -195,7 +195,6 @@ function navigateTo(path: string): void {
 }
 
 // ---------- wire up ----------
-$('reload').addEventListener('click', () => void load());
 if (embedded) {
   $('newtab').hidden = false;
   const saved = Number(localStorage.getItem('gitifact.height'));

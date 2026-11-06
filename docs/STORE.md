@@ -33,7 +33,7 @@ Bump `version` in `package.json` first; the build copies it into `manifest.json`
   > • Works with branches (including names containing "/"), tags and commits
   > • Runs the page's JavaScript and loads CDN resources, so interactive pages just work
   > • Rendering happens in a sandboxed frame with a strict Content Security Policy
-  > • Resizable height, reload, open in a new tab
+  > • Resizable height, open in a new tab
   > • Matches GitHub's light and dark themes
   >
   > Works with private repositories when you are signed in to GitHub. Source: https://github.com/champierre/gitifact

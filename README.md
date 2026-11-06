@@ -25,7 +25,7 @@ resolved automatically.
   own origin (details under [Security](#security)).
 - **JavaScript runs** inside the sandbox, so interactive pages work as they would on a web server.
 - **External resources** (CDNs, web fonts, remote images) are loaded over `https:`.
-- Resizable height, Reload, Open in new tab.
+- Resizable height, Open in new tab.
 - Follows GitHub's client-side navigation and light/dark/auto color modes.
 - Error and warning reporting: missing files, blocked external resources, script errors.
 
@@ -51,8 +51,6 @@ card in `chrome://extensions`.
 
 - **Preview / Code / Blame**: opening an HTML file shows the rendered page immediately. Click *Code*
   or *Blame* to go back to GitHub's views, and *Preview* to render again.
-- **Reload**: fetches the file and its resources again (useful after pushing a change; GitHub's raw
-  CDN caches for up to five minutes).
 - **Open in new tab**: opens the same preview as a full browser tab.
 - **Resize**: drag the handle under the preview to change its height. The height is remembered.
 - **Scripts**: inline scripts, `<script src>` from the repository and inline event handlers run
@@ -141,7 +139,7 @@ page in an incognito window.
 - **Size**: individual resources above 15 MB are skipped. Everything is inlined as `data:` URLs, so
   very asset-heavy pages take longer to render.
 - `raw.githubusercontent.com` caches files for up to five minutes, so a fresh push may take a moment
-  to show up in *Reload*.
+  to show up in the preview (switch to *Code* and back to *Preview* to fetch again).
 - GitHub's DOM is not a public API. The content script relies on the `ul[aria-label="File view"]`
   segmented control, the `#repos-sticky-header` wrapper and the `data-testid="raw-button"` link;
   if GitHub changes these, a fallback button is inserted into the header actions.
@@ -179,7 +177,7 @@ test/fixtures/            HTML/CSS/JS fixtures rendered through the real GitHub 
   the HTML/CSS rewriter (inlining, `@import`, `srcset`, `<base>`, CSP injection, link rewriting…).
 - `npm run test:e2e` launches Chromium with the built extension and covers: Preview tab injection,
   no tab on non-HTML files, CSS/image rendering on a public repository, JavaScript execution,
-  reload, open-in-new-tab, height resize, GitHub dark mode, client-side
+  open-in-new-tab, height resize, GitHub dark mode, client-side
   navigation, and sandbox escape attempts (`test/fixtures/malicious.html`: parent/top DOM access,
   cookies, storage, `chrome.runtime`, top navigation, popups, external and github.com fetches,
   form submission, meta refresh).

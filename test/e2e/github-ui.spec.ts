@@ -37,6 +37,7 @@ test('exposes an "open in new tab" link', async ({ context, extensionId }) => {
   await page.evaluate(() => window.scrollTo(0, 0));
   const pf = previewFrame(page, extensionId);
   await expect(pf.locator('#status')).toContainText('inlined');
+  await expect(pf.locator('#newtab')).toBeVisible();
   const href = await pf.locator('#newtab').getAttribute('href');
   expect(href).toMatch(new RegExp(`^chrome-extension://${extensionId}/preview.html\\?owner=mdn&repo=beginner-html-site-styled`));
   expect(href).not.toContain('embedded=1');
@@ -45,6 +46,8 @@ test('exposes an "open in new tab" link', async ({ context, extensionId }) => {
   await tab.goto(href!);
   const inner = await previewedFrame(tab, extensionId);
   await expect(inner.locator('h1')).toContainText('Mozilla is cool');
+  // 別タブで開いたプレビューには「Open in new tab」を出さない。
+  await expect(tab.locator('#newtab')).toBeHidden();
 });
 
 test('resizes the embedded preview by dragging the handle', async ({ context, extensionId }) => {

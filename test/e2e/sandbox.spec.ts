@@ -72,3 +72,32 @@ test('in-repository links are relayed to the parent as navigation requests, noth
   // The forged render/navigate messages from the document were not relayed.
   await expect(inner.locator('p')).toHaveCount(0);
 });
+
+test('in-page anchor links scroll inside the preview instead of navigating away', async ({ context, extensionId }) => {
+  const page = await context.newPage();
+  await page.goto(`chrome-extension://${extensionId}/sandbox.html`);
+  const dom = new JSDOM('');
+  const source = `<a id="l" href="#sec">jump</a><a id="top" href="#">top</a><a id="missing" href="#nope">missing</a>
+    <div style="height:3000px"></div><h2 id="sec">Section</h2><div style="height:3000px"></div>
+    <script>window.addEventListener('hashchange', function(){ document.body.dataset.hash = location.hash; });</script>`;
+  const { html } = await rewriteHtml(source, {
+    location: { owner: 'o', repo: 'r', ref: 'refs/heads/main', refName: 'main', path: 'index.html' },
+    fetchRepoFile: async () => ({ ok: false, status: 404, error: 'HTTP 404' }),
+    allowScripts: true,
+    allowExternal: false,
+    parser: new dom.window.DOMParser(),
+  });
+  await page.evaluate((h) => window.postMessage({ type: 'gitifact:render', html: h, allowScripts: true }, '*'), html);
+  const inner = page.frameLocator('iframe');
+  await inner.locator('#l').click();
+  // The document is still there and has scrolled to the target.
+  await expect(inner.locator('#sec')).toBeInViewport();
+  await expect(inner.locator('body')).toHaveAttribute('data-hash', '#sec');
+  // A link to a missing anchor leaves the document alone.
+  await inner.locator('#sec').evaluate(() => (document.getElementById('missing') as HTMLElement).click());
+  await expect(inner.locator('#sec')).toBeInViewport();
+  // "#" goes back to the top.
+  await inner.locator('#sec').evaluate(() => (document.getElementById('top') as HTMLElement).click());
+  await expect(inner.locator('#l')).toBeInViewport();
+  await expect(inner.locator('#sec')).toHaveText('Section');
+});

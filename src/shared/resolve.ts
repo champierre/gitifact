@@ -97,9 +97,25 @@ export const RUNTIME_SCRIPT = `(function(){
   });
   document.addEventListener('click', function(e){
     var t = e.target; if (!t || !t.closest) return;
-    var a = t.closest('a[data-gitifact-path]'); if (!a) return;
+    var a = t.closest('a[data-gitifact-path]');
+    if (a) {
+      e.preventDefault();
+      parent.postMessage({ type: 'gitifact:navigate', path: a.getAttribute('data-gitifact-path') }, '*');
+      return;
+    }
+    // ページ内リンク (#id)。srcdoc の文書は親ページの URL を基準に解決するため、そのままだと
+    // sandbox.html#id への遷移になり真っ白になる。ここで横取りして文書内の移動として扱う。
+    var h = t.closest('a[href], area[href]'); if (!h) return;
+    var raw = h.getAttribute('href') || '';
+    if (raw.charAt(0) !== '#') return;
     e.preventDefault();
-    parent.postMessage({ type: 'gitifact:navigate', path: a.getAttribute('data-gitifact-path') }, '*');
+    var id = raw.slice(1);
+    try { id = decodeURIComponent(id); } catch (e2) {}
+    var target = id ? (document.getElementById(id) || document.getElementsByName(id)[0] || null) : null;
+    // location.hash は about:srcdoc 自身を基準にするので同一文書内の移動になる (:target / hashchange も効く)。
+    try { if (location.hash !== raw) location.hash = raw; } catch (e3) {}
+    if (target) target.scrollIntoView();
+    else if (!id || id.toLowerCase() === 'top') window.scrollTo(0, 0);
   }, true);
   window.addEventListener('error', function(e){
     parent.postMessage({ type: 'gitifact:error', message: String(e.message || e.error || 'Script error') }, '*');
